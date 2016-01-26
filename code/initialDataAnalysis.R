@@ -30,7 +30,9 @@ stateData$fluWeek <- num_to_linear_week(stateData$date)
 peakData <- ddply(stateData, .variables = .(state, fluYear), .fun =  findPeak)
 
 
-test <- peakData[which(peakData$fluYear==1970), ]
+## run from here to get graph
+## edit the year to see succession of years
+test <- peakData[which(peakData$fluYear==2009), ]
 
 us <- map_data("state")
 
