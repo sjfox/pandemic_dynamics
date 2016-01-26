@@ -11,31 +11,52 @@ library(ggplot2)
 library(reshape2)
 library(plyr)
 
-## Read in the data
-pdmData <- read.csv(file = "../data/Deaths by City Level.csv", na.strings = "-")
+source("analysis_fxns.r")
 
-## Converts the week/year format to a date format
-## This will need to be updated to be more accurate in future
-pdmData$date <- as.Date(paste0(pdmData$YEAR," ", pdmData$WEEK, " 1"), format = "%Y %U %u")
 
-## Select only the years surrounding the pandemic 1968
-sxtyDat <- pdmData[pdmData$YEAR %in% c(1967,1968,1969),]
-
-## Now aggregate the data by state, to reduce the noisiness of the city data
-temp2 <- melt(sxtyDat, id.vars = c("WEEK", "YEAR", "date"))
+## Combine cities into states
+temp2 <- melt(pdmData, id.vars = c("WEEK", "YEAR", "date", "fluYear"))
 temp2$state <- sapply(strsplit(as.character(temp2$variable), split = "..", fixed=T), "[", 2)
 temp2$WEEK <- temp2$YEAR <- temp2$variable <-NULL
 
 ## Add up all of the weekly deaths by city into the individual state
-stateData <- ddply(temp2, .variables = .(date, state), .fun =  function(x) sum(x$value, na.rm=T))
+stateData <- ddply(temp2, .variables = .(date, state), 
+                   .fun =  function(x) data.frame(deaths=sum(x$value, na.rm=T), fluYear=x$fluYear[1]))
 ## removes temporary data frame
 rm(temp2)
 
-## Add up the state data into national data for plotting
-natData <- ddply(stateData, .variables = .(date), .fun =  function(x) sum(x$V1, na.rm=T))
-ggplot(natData, aes(date, V1))+ geom_line()+theme_bw()
+stateData$fluWeek <- num_to_linear_week(stateData$date)
 
-## Plot the state-wide data
-ggplot(stateData, aes(date, V1, color=state)) + geom_line() + theme_bw()
+peakData <- ddply(stateData, .variables = .(state, fluYear), .fun =  findPeak)
+
+
+test <- peakData[which(peakData$fluYear==2009), ]
+
+us <- map_data("state")
+
+test$region <- tolower(state.name[match(test$state, state.abb)])
+
+gg <- ggplot() + geom_map(data=us, map=us,
+                    aes(x=long, y=lat, map_id=region),
+                    fill="#ffffff", color="#ffffff", size=0.15)
+gg <- gg + geom_map(data=test, map=us,
+         aes(fill=magnitude, map_id=region),
+         color="#ffffff", size=0.15)
+gg <- gg + scale_fill_continuous(low='blue', high='red', 
+                                 guide='colorbar')
+gg <- gg + labs(x=NULL, y=NULL)
+gg <- gg + coord_map("albers", lat0 = 39, lat1 = 45) 
+gg <- gg + theme(panel.border = element_blank())
+gg <- gg + theme(panel.background = element_blank())
+gg <- gg + theme(axis.ticks = element_blank())
+gg <- gg + theme(axis.text = element_blank())
+print(gg)
+
+# ## Add up the state data into national data for plotting
+# natData <- ddply(stateData, .variables = .(date), .fun =  function(x) sum(x$V1, na.rm=T))
+# ggplot(natData, aes(date, V1)) + geom_line() + theme_bw()
+# 
+# ## Plot the state-wide data
+# ggplot(stateData, aes(date, V1, color=state)) + geom_line() + theme_bw()
 
 
