@@ -12,6 +12,8 @@ season_of = function(data){
 
 
 ## Data Cleaning 
+##Remove duplicate rows
+
 doubleDates <- rle(pdmData$WEEK)
 which(doubleDates$lengths>=2)
 indexToRemove <- c(sum(doubleDates$lengths[1:53]), 
@@ -26,6 +28,7 @@ which(doubleDates$lengths==2)
 df <- df[-sum(doubleDates$lengths[1:322]),]
 pdmData <- df
 rm(df)
+names(pdmData)[which(names(pdmData)=="PROVIDENCE")] <- "PROVIDENCE..RI"
 
 ## Start date code
 originDate <- "1965-1-8"
@@ -45,7 +48,7 @@ datesTable <- data.frame(date = pdmData$date,
 
 start_weeks <- datesTable$rDate[datesTable$cdcWeek==40]
 shifted_start_weeks = c(start_weeks[1], start_weeks[-length(start_weeks)])
-
+pdmData$cumWeek <- pdmData$WEEK <- pdmData$YEAR <- NULL
 # Converts date(s) (r format) into number of weeks from the start of the current season
 num_to_linear_week = function(date){
 
@@ -69,7 +72,6 @@ num_to_linear_week = function(date){
 findPeak <- function(data) {
   ## function takes in single season and signle state data
   ## returns the week of the flu
-  data
   peak_intensity <- max(data$death, na.rm=T)
   peak_week <- data$fluWeek[which.max(data$death)]
   return(data.frame(magnitude=peak_intensity, peakWeek=peak_week))
