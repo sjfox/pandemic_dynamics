@@ -29,18 +29,19 @@ stateData$fluWeek <- num_to_linear_week(stateData$date)
 
 peakData <- ddply(stateData, .variables = .(state, fluYear), .fun =  findPeak)
 
-
+## run from here to get graph
+## edit the year to see succession of years
 test <- peakData[which(peakData$fluYear==2009), ]
-
+test <- test[which(!is.na(test$state)),]
 us <- map_data("state")
 
 test$region <- tolower(state.name[match(test$state, state.abb)])
 
 gg <- ggplot() + geom_map(data=us, map=us,
                     aes(x=long, y=lat, map_id=region),
-                    fill="#ffffff", color="#ffffff", size=0.15)
+                    fill="gray", color="#ffffff", size=0.15)
 gg <- gg + geom_map(data=test, map=us,
-         aes(fill=magnitude, map_id=region),
+         aes(fill=peakWeek, map_id=region),
          color="#ffffff", size=0.15)
 gg <- gg + scale_fill_continuous(low='blue', high='red', 
                                  guide='colorbar')
