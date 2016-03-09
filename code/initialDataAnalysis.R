@@ -10,8 +10,9 @@ if(grepl('aksharaanand', Sys.info()['login'])) setwd('~/pandemic_dynamics/code')
 library(ggplot2)
 library(reshape2)
 library(plyr)
+library(cowplot)
 
-source("analysis_fxns.r")
+source("../../../flu/pandemic_dynamics/code/analysis_fxns.r")
 
 
 ## Combine cities into states
@@ -30,6 +31,19 @@ stateData$fluWeek <- num_to_linear_week(stateData$date)
 peakData <- ddply(stateData, .variables = .(state, fluYear), .fun =  findPeak)
 
 
+## Looking at inidividual histogram for IL
+hist(peakData[which(peakData$state=="IL"), "peakWeek"], breaks=15, freq = FALSE)
+
+## Selecitng the pandemic and seasonal data separately
+seasonalPeaks <- peakData[-which(peakData$fluYear %in% c(1968, 1977,2009)), ]
+pdmPeaks <- peakData[which(peakData$fluYear %in% c(1968, 1977,2009)), ]
+
+## Plotting the facet grid of all peak week densties
+ggplot(data=seasonalPeaks, aes(peakWeek)) + geom_density() + facet_wrap(~state) +
+  geom_vline(data=pdmPeaks, aes(xintercept= peakWeek, color = as.factor(fluYear)))
+
+
+
 ## run from here to get graph
 ## edit the year to see succession of years
 test <- peakData[which(peakData$fluYear==2009), ]
@@ -42,7 +56,7 @@ gg <- ggplot() + geom_map(data=us, map=us,
                     aes(x=long, y=lat, map_id=region),
                     fill="gray", color="#ffffff", size=0.15)
 gg <- gg + geom_map(data=test, map=us,
-         aes(fill=peakWeek, map_id=region),
+         aes(fill=magnitude, map_id=region),
          color="#ffffff", size=0.15)
 gg <- gg + scale_fill_continuous(low='blue', high='red', 
                                  guide='colorbar')
@@ -59,6 +73,6 @@ print(gg)
 # ggplot(natData, aes(date, V1)) + geom_line() + theme_bw()
 # 
 # ## Plot the state-wide data
-# ggplot(stateData, aes(date, V1, color=state)) + geom_line() + theme_bw()
+ggplot(stateData, aes(date, deaths, color=state)) + geom_point() + theme_bw()
 
 
