@@ -12,7 +12,7 @@ library(reshape2)
 library(plyr)
 library(cowplot)
 
-source("../../../flu/pandemic_dynamics/code/analysis_fxns.r")
+source("analysis_fxns.r")
 
 
 ## Combine cities into states
