@@ -23,6 +23,7 @@ temp2$variable <-NULL
 ## Add up all of the weekly deaths by city into the individual state
 stateData <- ddply(temp2, .variables = .(date, state), 
                    .fun =  function(x) data.frame(deaths=sum(x$value, na.rm=T), fluYear=x$fluYear[1]))
+
 ## removes temporary data frame
 rm(temp2)
 
@@ -34,17 +35,108 @@ peakData <- ddply(stateData, .variables = .(state, fluYear), .fun =  findPeak)
 ## Looking at inidividual histogram for IL
 hist(peakData[which(peakData$state=="IL"), "peakWeek"], breaks=15, freq = FALSE)
 
-## Selecitng the pandemic and seasonal data separately
+## Selecting the pandemic and seasonal data separately
 seasonalPeaks <- peakData[-which(peakData$fluYear %in% c(1968, 1977,2009)), ]
 pdmPeaks <- peakData[which(peakData$fluYear %in% c(1968, 1977,2009)), ]
 
+##Creating a rank box plot
+library(dplyr)
+library(tidyr)
+pdmRanks <- pdmPeaks %>%
+              group_by(fluYear) %>%
+              mutate(ranked_states=rank(peakWeek, ties.method="average"))
+
+seasonalPeaks %>%
+  group_by(fluYear) %>%
+  mutate(ranked_states=rank(peakWeek, ties.method="average")) %>%
+  ggplot(aes(x=state, y=ranked_states)) +geom_boxplot() +
+    geom_point(data=pdmRanks, aes(x=state, y = ranked_states, color=as.factor(fluYear)))
+
+
+##Creating a median seasonal graph
+## Only Alabama data
+seasonalPeaks %>%
+  filter(state=="AL") %>%
+  summarise(median(peakWeek))
+
+## All states  
+median_state_seasonal <- seasonalPeaks %>%
+                            group_by(state) %>%
+                            summarise(med_pk_week=median(peakWeek)) 
+              
+
+
+pandemic_1968_peak_week <- pdmPeaks %>%
+                            filter(fluYear== 1968) 
+
+## Creating columns for each pandemic year data
+sixtyeight <- pdmPeaks %>%
+                filter(fluYear== 1968) %>%
+                select(peakWeek)
+
+seventyseven <- pdmPeaks %>%
+                  filter(fluYear== 1977) %>%
+                  select(peakWeek)
+
+
+twothousandnine <- pdmPeaks %>%
+                      filter(fluYear== 2009) %>%
+                      select(peakWeek)
+median_state_seasonal$sixty <- sixtyeight$peakWeek
+median_state_seasonal$seventy <- seventyseven$peakWeek
+median_state_seasonal$onine <- twothousandnine$peakWeek
+
+median_state_seasonal_long <- median_state_seasonal %>%
+                                gather(key = pandemic_year, value=pandemic_peak, sixty, seventy, onine)
+
+#Run to plot all three MEDIAN pandemic years together
+ggplot(median_state_seasonal_long, aes(x=med_pk_week, y=pandemic_peak, color=pandemic_year)) + 
+  geom_point() + theme_bw() +  theme(axis.line.x = element_line(color="black", size = 2),
+                                     axis.line.y = element_line(color="black", size = 2))
+
+#Run to plot only MEDIAN 1968 
+plot(median_state_seasonal$med_pk_week, pandemic_1968_peak_week$peakWeek, main = "Figure 1", xlab = "Median Seasonal Peak", ylab = "Pandemic Peak Week", pch = 19)
+
+
 ## Plotting the facet grid of all peak week densties
 ggplot(data=seasonalPeaks, aes(peakWeek)) + geom_density() + facet_wrap(~state) +
-  geom_vline(data=pdmPeaks, aes(xintercept= peakWeek, color = as.factor(fluYear)))
+  geom_vline(data=pdmPeaks, aes(xintercept= peakWeek, color = as.factor(fluYear))) 
+
+#Creating a mean seasonal graph
+mean_state_seasonal <- seasonalPeaks %>%
+  group_by(state) %>%
+  summarise(mean_pk_week=mean(peakWeek))
 
 
+pandemic_1968_peak_week <- pdmPeaks %>%
+  filter(fluYear== 1968) 
 
-## run from here to get graph
+
+## Creating columns for each pandemic year data
+sixeight <- pdmPeaks %>%
+  filter(fluYear== 1968) %>%
+  select(peakWeek)
+
+seven <- pdmPeaks %>%
+  filter(fluYear== 1977) %>%
+  select(peakWeek)
+
+nine <- pdmPeaks %>%
+  filter(fluYear== 2009) %>%
+  select(peakWeek)
+mean_state_seasonal$sixty <- sixtyeight$peakWeek
+mean_state_seasonal$seventy <- seventyseven$peakWeek
+mean_state_seasonal$onine <- twothousandnine$peakWeek
+
+mean_state_seasonal_long <- mean_state_seasonal %>%
+  gather(key = pandemic_year, value=pandemic_peak, sixty, seventy, onine)
+
+#Run to plot all three MEAN pandemic years together
+ggplot(mean_state_seasonal_long, aes(x=mean_pk_week, y=pandemic_peak, color=pandemic_year)) + 
+  geom_point() + theme_bw() +  theme(axis.line.x = element_line(color="black", size = 2),
+                                     axis.line.y = element_line(color="black", size = 2))
+
+## run from here to get map
 ## edit the year to see succession of years
 test <- peakData[which(peakData$fluYear==2009), ]
 
