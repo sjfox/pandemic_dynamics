@@ -8,34 +8,20 @@ if(grepl('tacc', Sys.info()['nodename'])) setwd('/home1/02958/sjf826/pandemic_dy
 if(grepl('aksharaanand', Sys.info()['login'])) setwd('~/pandemic_dynamics/code')
 
 ## Load up the R packages that will be used in the code
-library(ggplot2)
-library(reshape2)
-library(plyr)
-library(cowplot)
+##library(ggplot2)
+##library(reshape2)
+##library(plyr)
+##library(cowplot)
 library(tidyr)
 
 source("analysis_fxns.r")
 
-## Combine cities into states
-temp2 <- melt(pdmData, id.vars = c("date", "fluYear"))
-temp2$state <- sapply(strsplit(as.character(temp2$variable), split = "..", fixed=T), "[", 2)
-temp2$variable <-NULL
-
-## Combine cities into states
-temp2 <- melt(pdmData, id.vars = c("date", "fluYear"))
-temp2$state <- sapply(strsplit(as.character(temp2$variable), split = "..", fixed=T), "[", 2)
-temp2$variable <-NULL
-
-## Add up all of the weekly deaths by city into the individual state --> need to edit
-stateData <- ddply(temp2, .variables = .(date, state), 
-                   .fun =  function(x) data.frame(deaths=sum(x$value, na.rm=T), fluYear=x$fluYear[1]))
-
-#remove temporary data frame
-rm(temp2) 
-
-#convert data to 4 columns
+#combine cities into states
 year <- "year"
 week <- "week"
 state <- "state"
 deaths <- "stateData"
-data_long <- gather_(pdmData, year, week, state, deaths, factor_key = TRUE)
+##temp2 <- gather_(pdmData, year, week, state, deaths, factor_key = year)
+##temp2 <- gather_(pdmData, "state", "year", 2:3, factor_key = city)
+gather(pdmData, city, deaths, 3:123 , na.rm = FALSE, convert = FALSE, factor_key = FALSE)
+
