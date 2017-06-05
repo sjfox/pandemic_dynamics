@@ -12,7 +12,7 @@ if(grepl('aksharaanand', Sys.info()['login'])) setwd('~/pandemic_dynamics/code')
 ##library(reshape2)
 ##library(plyr)
 ##library(cowplot)
-library(tidyr)
+library(tidyverse)
 
 source("analysis_fxns.r")
 
@@ -23,5 +23,11 @@ state <- "state"
 deaths <- "stateData"
 ##temp2 <- gather_(pdmData, year, week, state, deaths, factor_key = year)
 ##temp2 <- gather_(pdmData, "state", "year", 2:3, factor_key = city)
-gather(pdmData, city, deaths, 3:123 , na.rm = FALSE, convert = FALSE, factor_key = FALSE)
+pdmDataLong <- gather(pdmData, city, deaths, BIRMINGHAM..AL:MILWAUKEE..WI , na.rm = FALSE, convert = FALSE, factor_key = FALSE) %>%
+separate(city, into =c("city", "state"), sep = "\\..") 
+head(pdmDataLong)  
 
+#group data and then pipe it into summarize function
+pdmDataLong %>% group_by(city, fluYear) %>%
+  summarise(total_deaths = sum(deaths, na.rm=T)) %>%
+ggplot(aes(x = fluYear, y = total_deaths, color = city) + geom_line())
