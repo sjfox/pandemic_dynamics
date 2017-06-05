@@ -16,7 +16,7 @@ library(tidyverse)
 
 source("analysis_fxns.r")
 
-#combine cities into states
+#combined cities into states
 year <- "year"
 week <- "week"
 state <- "state"
